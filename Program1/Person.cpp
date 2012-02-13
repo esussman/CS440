@@ -143,6 +143,7 @@ Under* Under_new(char * name, char gender, char * major, int year)
   under->student.person.gender = gender;
   under->student.person.type_check = &type_check_under;
   under->student.person.work = &student_work;
+  under->student.person.delet = &delet_under;
   under->student.graduate = &graduate_under;
   under->student.major = strdup(major);
   under->year = year;
@@ -157,6 +158,7 @@ Grad* Grad_new(char * name, char gender, char * major, char * degree)
   grad->student.person.gender = gender;
   grad->student.person.type_check = &type_check_grad;
   grad->student.person.work = &student_work;
+  grad->student.person.delet = delet_grad;
   grad->student.major = strdup(major);
   grad->student.graduate = &graduate_grad;
   grad->degree = strdup(degree);
@@ -170,6 +172,7 @@ Professor* Professor_new(char * name, char gender, char * office)
   professor->person.gender = gender;
   professor->person.type_check = &type_check_professor;
   professor->person.work = &professor_work;
+  professor->person.delet = &delet_professor;
   professor->research = &research;
   professor->office = strdup(office);
   return professor;
