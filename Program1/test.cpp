@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "Person.hpp"
-#include "List.hpp"
+//#include "List.hpp"
 
 /*
  * Person hierarchy print functions.
@@ -88,7 +88,7 @@ main(int argc, char *argv[]) {
         }
     }
     */
-    srand48(1234);
+   // srand48(1234);
 
     /**************************************************************************
      * Test Part 1, Person hierarchy.
@@ -117,6 +117,7 @@ main(int argc, char *argv[]) {
         Person_print(p1);
         // Note that Grad and Under print the same thing for work,
         // and so can share the implementation.
+
         p1->work(p1); // Prints "<name> studies <major>."
 
         Student *s = Person_downcast_Student(p1); // Must return null if not a Student.
@@ -197,6 +198,12 @@ main(int argc, char *argv[]) {
         assert(Person_downcast_Under(p3) == 0);
         assert(Person_downcast_Grad(p3) == 0);
     }
-
-    Person *p4 = (Person *) Under_new("Dave", 'M', "Chemistry", 2);
+    printf("start\n");
+    p1->delet(p1);
+    printf("done");
+    p2->delet(p2);
+    printf("done");
+    p3->delet(p3);
+    printf("done");
+   // Person *p4 = (Person *) Under_new("Dave", 'M', "Chemistry", 2);
 }
