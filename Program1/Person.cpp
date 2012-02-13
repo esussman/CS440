@@ -4,6 +4,30 @@
 #include <string.h>
 #include <iostream>
 
+void delet_under(Person* person)
+{
+  Under *under = Person_downcast_Under(person);
+  free(under->student.person.name);
+  free(under->student.major);
+  free(under);
+}
+void delet_grad(Person* person)
+{
+  Grad *grad = Person_downcast_Grad(person);
+  free(grad->student.person.name);
+  free(grad->student.major);
+  free(grad->degree);
+  free(grad);
+}
+
+void delet_professor(Person* person)
+{
+  Professor *professor = Person_downcast_Professor(person);
+  free(professor->person.name);
+  free(professor->office);
+  free(professor);
+}
+
 void research(Professor *professor, const char * topic)
 {
    // Must print "<name> does research in <topic>."
