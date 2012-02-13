@@ -4,7 +4,7 @@ typedef struct Person_
   char gender;
   void (*work)(Person_ * person);
   bool (*type_check)(const char* type);
-  ~Person_();
+  void (*delet)(Person_ * person);
 } Person;
 
 typedef struct Student_
