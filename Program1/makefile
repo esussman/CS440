@@ -6,8 +6,14 @@ Person.hpp \
 Makefile \
 README
 
-a.out:
-	g++ -g -Wall Person.cpp Person.hpp test.cpp
+a.out: person.o test.o
+	g++ -g -Wall person.o test.o
+
+test.o: test.cpp
+	g++ -Wall -c test.cpp
+
+person.o: Person.cpp Person.hpp
+	g++ -Wall -g -c Person.cpp
 
 #Removes all objects and executables.
 clean:
