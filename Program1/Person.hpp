@@ -4,13 +4,14 @@ typedef struct Person_
   char gender;
   void (*work)(Person_ * person);
   bool (*type_check)(const char* type);
+  ~Person_();
 } Person;
 
 typedef struct Student_
 {
   Person person;
   char *major;
-  void graduate(Student_ *student);
+  void (*graduate)(Student_ *student);
 } Student;
 
 typedef struct Under_
@@ -29,7 +30,7 @@ typedef struct Professor_
 {
   Person person;
   char *office;
-  void research(Professor_ *professor, const char * topic);
+  void (*research)(Professor_ *professor, const char * topic);
 } Professor;
 
 Under* Under_new(char * name, char gender, char * major, int year);
