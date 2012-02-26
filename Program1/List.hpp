@@ -19,7 +19,7 @@ typedef Person* PersonPtr;
 
 typedef struct List_PersonPtr_{
 	Node *head;
-  Link *tail;
+  Link tail;
   const char *type;
 
   bool (*PersonPtr_less)(const PersonPtr &p1, const PersonPtr &p2);
@@ -41,13 +41,39 @@ List_PersonPtr_Iterator push_front(List_PersonPtr_ *list, Person *person)
   n->person = person;
   if(list->head == NULL)
   {
-    n->link.next = n->link.prev = &n->link;
+    n->link.next = NULL;
+    n->link.prev = NULL;
+    list->head = n;
+    list->tail = n->link;
+  }
+  else
+  {
+    n->link.next = &list->head->link;
+    n->link.prev = NULL;
+    list->head->link.prev = &n->link;
   }
   List_PersonPtr_Iterator it;
   return it;
 }
 List_PersonPtr_Iterator push_back(List_PersonPtr_ *list, Person *person)
 {
+
+  Node *n = (Node*) malloc (sizeof(Node));
+  n->person = person;
+  if(list->head == NULL)
+  {
+    n->link.next = NULL;
+    n->link.prev = NULL;
+    list->head = n;
+    list->tail = n->link;
+  }
+  else
+  {
+    n->link.next = NULL;
+    n->link.prev = list->tail;
+    list->tail = &n->link;
+  }
+
   List_PersonPtr_Iterator it;
   return it;
 }
