@@ -33,9 +33,9 @@ typedef struct Professor_
   void (*research)(Professor_ *professor, const char * topic);
 } Professor;
 
-Under* Under_new(char * name, char gender, char * major, int year);
-Grad* Grad_new(char * name, char gender, char * major, char * degree);
-Professor* Professor_new(char * name, char gender, char * office);
+Under* Under_new(const char* name, char gender, const char* major, int year);
+Grad* Grad_new(const char* name, char gender, const char* major, const char* degree);
+Professor* Professor_new(const char* name, char gender, const char* office);
 Student* Person_downcast_Student(Person* person);
 Under* Person_downcast_Under(Person* person);
 Under* Student_downcast_Under(Student* student);
