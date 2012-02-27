@@ -9,8 +9,8 @@ README
 a.out: person.o test.o
 	g++ -g -Wall person.o test.o
 
-test.o: test.cpp
-	g++ -Wall -c test.cpp
+test.o: test.cpp list.hpp
+	g++ -Wall -g -c test.cpp
 
 person.o: Person.cpp Person.hpp
 	g++ -Wall -g -c Person.cpp
