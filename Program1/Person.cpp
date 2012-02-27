@@ -136,7 +136,7 @@ void student_work(Person *person)
   printf("%s studies %s\n", student->person.name, student->major);
 
 }
-Under* Under_new(char * name, char gender, char * major, int year)
+Under* Under_new(const char* name, char gender, const char* major, int year)
 {
   Under *under = (Under*) malloc(sizeof (Under));
   under->student.person.name = strdup(name);
@@ -151,7 +151,7 @@ Under* Under_new(char * name, char gender, char * major, int year)
   return under;
 }
 
-Grad* Grad_new(char * name, char gender, char * major, char * degree)
+Grad* Grad_new(const char* name, char gender, const char* major, const char* degree)
 {
   Grad *grad = (Grad*) malloc (sizeof (Grad));
   grad->student.person.name = strdup(name);
@@ -165,7 +165,7 @@ Grad* Grad_new(char * name, char gender, char * major, char * degree)
 
   return grad;
 }
-Professor* Professor_new(char * name, char gender, char * office)
+Professor* Professor_new(const char* name, char gender, const char* office)
 {
   Professor *professor = (Professor*) malloc (sizeof (Professor));
   professor->person.name = strdup(name);
