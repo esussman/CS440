@@ -90,30 +90,62 @@ List_PersonPtr_Iterator push_back(List_PersonPtr_* list, Person* person)
   return it;
 }
 
-List_PersonPtr_Iterator SortedMerge(List_PersonPtr *list, List_PersonPtr_Iterator begin, List_PersonPtr_Iterator slow, List_PersonPtr_Iterator end)
+List_PersonPtr_Iterator SortedMerge(List_PersonPtr *list, List_PersonPtr_Iterator a, List_PersonPtr_Iterator b)
 {
-  List_PersonPtr_Iterator middle = slow;
   // A: begin, slow
   // B: slow, end
-  while(!List_PersonPtr_Iterator_equal(begin, slow) && !List_PersonPtr_Iterator_equal(middle, end))
+  List_PersonPtr_Iterator pleasework = List_PersonPtr_it_ctor(a.node);
+  while(a.node->next != NULL || b.node->next != NULL)
   {
-    if(list->compare(begin.deref(&begin), middle.deref(&middle)))
+    if(list->compare(a.deref(&a), b.deref(&b)))
     {
-      begin.inc(&begin);
+      if(list->compare(a.deref(&a), pleasework.deref(&pleasework)))
+      {
+        pleasework = a;
+      }
+      List_PersonPtr_Iterator temp = a;
+      temp.inc(&temp);
+      a = temp;
     }
     else
     {
-      List_Person_Iterator temp = middle;
-      middle.inc(&middle);
-      temp.node->next = begin.node;
+      if(list->compare(b.deref(&b), pleasework.deref(&pleasework)))
+      {
+        pleasework = b;
+      }
+      List_PersonPtr_Iterator temp = b;
+      temp.inc(&temp);
+      b.node->next = a.node;
+      a.node->prev = b.node;
+      b = temp;
     }
   }
-  return slow;
+  if(list->compare(a.deref(&a), b.deref(&b)))
+  {
+      if(list->compare(a.deref(&a), pleasework.deref(&pleasework)))
+      {
+        pleasework = a;
+      }
+    a.node->next = b.node;
+    b.node->prev = a.node;
+  }
+  else
+  {
+      if(list->compare(b.deref(&b), pleasework.deref(&pleasework)))
+      {
+        pleasework = b;
+      }
+    b.node->next = a.node;
+    a.node->prev = b.node;
+  }
+  return pleasework;
 }
 List_PersonPtr_Iterator node_sort(List_PersonPtr *list, List_PersonPtr_Iterator begin, List_PersonPtr_Iterator end)
 {
   List_PersonPtr_Iterator it_inc = begin;
   it_inc.inc(&it_inc);
+  List_PersonPtr_Iterator res1;
+  List_PersonPtr_Iterator res2;
 
   List_PersonPtr_Iterator slow = begin;
   if(!List_PersonPtr_Iterator_equal(it_inc, end)) {
@@ -128,18 +160,43 @@ List_PersonPtr_Iterator node_sort(List_PersonPtr *list, List_PersonPtr_Iterator 
         slow.inc(&slow);
       }
     }
-    begin = node_sort(list, begin, slow);
-    node_sort(list, slow, end);
+    List_PersonPtr_Iterator slow_hold = slow;
+    slow.inc(&slow);
+    slow_hold.node->next = NULL;
+    res1 = node_sort(list, begin, slow_hold);
+    res2 = node_sort(list, slow, end);
+  }
+  else
+  {
+    slow.inc(&slow);
+    begin.node->next = NULL;
+    slow.node->next = NULL;
+    res1 = begin;
+    res2 = slow;
   }
 
-  return SortedMerge(list, begin, slow, end);
+  return SortedMerge(list, res1, res2);
 }
-
+void reinsertPrevPointers(List_PersonPtr* list)
+{
+  Node* fast = list->head.next;
+  Node* slow = &list->head;
+  while(fast->next != NULL)
+  {
+    fast->prev = slow;
+    slow = slow->next;
+    fast = fast->next;
+  }
+  fast->next = &list->head;
+  list->head.prev = fast;
+}
 void sort(List_PersonPtr* list)
 {
   List_PersonPtr_Iterator end = list->end(list);
+  end.dec(&end);
   List_PersonPtr_Iterator head = node_sort(list, list->begin(list), end);
   list->head.next = head.node;
+  reinsertPrevPointers(list);
 }
 
 void erase(List_PersonPtr_* list, List_PersonPtr_Iterator it)
@@ -154,7 +211,6 @@ void List_PersonPtr_delet(List_PersonPtr* list)
 {
   if(list->size == 0)
   {
-    /*free(&list->head);*/
     free(list);
   }
   else
