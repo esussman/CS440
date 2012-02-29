@@ -4,23 +4,33 @@
  *    -i iterations
  *
  * to do a stress test for the given number of iterations.
+ * Use
+ *
+ *    -s seed
+ *
+ * to give a different seed.  Use a seed of 0 to seed
+ * with the current time.
  */
+
+
 
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <iostream>
-#include <set>
+#include <list>
+#include <sys/time.h>
 #include <vector>
 
 #include "Person.hpp"
 #include "List.hpp"
 
+
+
 /*
- * Person hierarchy print functions.
- * These are not intended to be member functions, but more like
- * non-member helper functions.
+ * Person hierarchy print functions.  These are not intended to be member
+ * functions, but more like non-member helper functions.
  */
 
 void
@@ -49,6 +59,8 @@ Professor_print(Professor *p) {
     printf("Office: %s\n", p->office);
 }
 
+
+
 /*
  * List test functions.
  */
@@ -60,9 +72,8 @@ bool
 PersonPtr_less(const PersonPtr &p1, const PersonPtr &p2) {
     return strcmp(p1->name, p2->name) < 0;
 }
-// This "instantiates" the template.
-// Note that there is no semicolon.
-//List_DEFINE(PersonPtr)
+// This "instantiates" the template.  Note that there is no semicolon.
+List_DEFINE(PersonPtr)
 
 // MyClass List
 struct MyClass {
@@ -72,14 +83,14 @@ bool
 MyClass_less(const MyClass &o1, const MyClass &o2) {
     return o1.num < o2.num;
 }
-//List_DEFINE(MyClass)
+List_DEFINE(MyClass)
 
 // int List
 bool
 int_less(const int &i1, const int &i2) {
     return i1 < i2;
 }
-//List_DEFINE(int)
+List_DEFINE(int)
 
 // Stress test List
 struct Stress {
@@ -90,7 +101,7 @@ bool
 Stress_less(const Stress& o1, const Stress& o2) {
     return o1.val < o2.val;
 }
-//List_DEFINE(Stress)
+List_DEFINE(Stress)
 
 
 
@@ -100,84 +111,12 @@ Stress_less(const Stress& o1, const Stress& o2) {
 
 void traverse(List_PersonPtr &l, int level);
 void traverse2(int level);
+void check(List_Stress *list, std::list<int> &mirror);
 
-void
-traverse(List_PersonPtr &list, int level) {
-    for (List_PersonPtr_Iterator it = list.begin(&list);
-     !List_PersonPtr_Iterator_equal(it, list.end(&list)); it.inc(&it)) {
-        Person_print(it.deref(&it));
-        if (level != 0) {
-            traverse(list, level - 1);
-        }
-    }
+// Returns a random number in the given range, inclusive.
+inline size_t rand_int(size_t low, size_t high) {
+    return (high - low + 1)*drand48() + low;
 }
-void
-traverse2(int level) {
-
-    List_PersonPtr *list = List_PersonPtr_new(PersonPtr_less);
-
-    struct Local {
-        static Person *person() {
-            char name[30];
-            sprintf(name, "Jane%d", int(10000*drand48()));
-            return (Person *) Professor_new(name, 'F', "T-10");
-        }
-    };
-
-    for (int i = 0; i < 4; i++) {
-        Person *p = Local::person();
-        List_PersonPtr_Iterator it = list->push_back(list, p);
-        // If a duplicate (unlikely but possible), free it, because it
-        // didn't get inserted.
-        if (List_PersonPtr_Iterator_equal(it, list->end(list))) {
-            p->delet(p);
-        }
-    }
-
-    for (List_PersonPtr_Iterator it = list->begin(list);
-     !List_PersonPtr_Iterator_equal(it, list->end(list));
-     it.inc(&it)) {
-        Person_print(it.deref(&it));
-        if (level != 0) {
-            traverse2(level - 1);
-        }
-    }
-
-    // Remove from List before deleting, to avoid having pointers to
-    // deleted Person objects in the List, which can mess up
-    // some algorithms for incrementing.
-    {
-        std::vector<Person *> del_list;
-        for (List_PersonPtr_Iterator it = list->begin(list);
-         !List_PersonPtr_Iterator_equal(it, list->end(list));
-         it.inc(&it)) {
-            del_list.push_back(it.deref(&it));
-        }
-
-        list->delet(list);
-
-        for (size_t i = 0; i < del_list.size(); i++) {
-            del_list.at(i)->delet(del_list.at(i));
-        }
-    }
-}
-//void check(List_Stress *list, std::set<int> &mirror);
-
-// Below is a helper function for the testing only.  It not necessary for the
-// actual container.
-/*bool
-Stress_Iterator_less(const List_Stress_Iterator& lhs, const List_Stress_Iterator& rhs) {
-    List_Stress_Iterator it1, it2;
-    it1 = lhs;
-    it2 = rhs;
-    Stress s1 = it1.deref(&it1);
-    Stress s2 = it2.deref(&it2);
-    return s1.val < s2.val;
-}*/
-
-/*
- * Main.
- */
 
 void
 print(List_PersonPtr *list) {
@@ -188,17 +127,55 @@ print(List_PersonPtr *list) {
         it.inc(&it);
     }
     printf("---- Print end\n");
-  }
+}
+
+
+
+/*
+ * Main.
+ */
 
 int
 main(int argc, char *argv[]) {
 
+    /*
+    // Code to test the rand_int() function.
+    {
+        size_t cnts[2] = {0, 0};
+        for (int i = 0; i < 10000; i++) {
+            size_t n = rand_int(0, 1);
+            assert(n >= 0 && n <= 1);
+            cnts[n]++;
+        }
+        printf("%zu 0s and %zu 1s\n", cnts[0], cnts[1]);
+        exit(0);
+    }
+    */
+
     int c;
-    int iterations = 0;
-    while ((c = getopt(argc, argv, "i:")) != EOF) {
+    int iterations = 100;
+    long seed = 1234;
+    while ((c = getopt(argc, argv, "s:i:")) != EOF) {
         switch (c) {
             case 'i':
                 iterations = atoi(optarg);
+                break;
+            case 's':
+                {
+                    seed = atol(optarg);
+                    if (seed == 0) {
+                        timeval tv;
+                        int ec = gettimeofday(&tv, 0);
+                        assert(ec == 0);
+                        seed = tv.tv_sec ^ tv.tv_usec;
+                        // Not sure of the behavior under 64-bits, so mix things
+                        // up everywhere.
+                        if (sizeof(seed) > 4) {
+                            seed = seed ^ (seed >> 32) ^ (seed << 32);
+                        }
+                    }
+                    printf("---- Seeding with 0x%lx\n", seed);
+                }
                 break;
             case '?':
                 fprintf(stderr, "Unrecog.\n");
@@ -206,7 +183,9 @@ main(int argc, char *argv[]) {
         }
     }
 
-    srand48(1234);
+    srand48(seed);
+
+
 
     /**************************************************************************
      * Test Part 1, Person hierarchy.
@@ -222,27 +201,31 @@ main(int argc, char *argv[]) {
 
         char *n = strdup("Jane");
         char *major = strdup("CS");
-        // Pass allocated strings to prevent the implementation from
-        // just saving the pointers, which would be possible if we
-        // passed literals.
+        // This allocates and constructs an Under object.  Pass allocated
+        // strings to prevent the implementation from just saving the
+        // pointers, which would be possible if we passed literals.
         p1 = (Person *) Under_new(n, 'F', major, 4);
         free(n);
         free(major);
 
-        // Prints:
-        // Name: <name>
-        // Gender: <gender>
+        // Test field access.  Prints:
+        //     Name: <name>
+        //     Gender: <gender>
         Person_print(p1);
-        // Note that Grad and Under print the same thing for work,
-        // and so can share the implementation.
+        // Test method call.  Note that Grad and Under print the same thing
+        // for work, and so can share the implementation.
         p1->work(p1); // Prints "<name> studies <major>."
 
-        Student *s = Person_downcast_Student(p1); // Must return null if not a Student.
+        // Test downcasting.  Must return null if not a Student.
+        Student *s = Person_downcast_Student(p1);
         Student_print(s); // Prints "Major: <major>"
-        // Assume year 4 means one more year to go.
-        s->graduate(s); // Prints "<name> graduates in <N> years and finds a job in <major> or goes to grad school."
+        // Prints "<name> graduates in <N> years and finds a job in <major>
+        // or goes to grad school."  Assume year 4 means one more year to
+        // go.
+        s->graduate(s);
 
-        Under *u = Person_downcast_Under(p1); // Must return null if not an Under.
+        // Test downcast.  Must return null if not an Under.
+        Under *u = Person_downcast_Under(p1);
         assert(Student_downcast_Under(s) == u);
         Under_print(u); // Prints "Year: <year>"
 
@@ -257,8 +240,7 @@ main(int argc, char *argv[]) {
 
     Person *p2 = 0;
     {
-
-                      /*
+        /*
          * Create an Grad object.
          */
 
@@ -277,7 +259,8 @@ main(int argc, char *argv[]) {
 
         Student *s = Person_downcast_Student(p2);
         Student_print(s);
-        s->graduate(s); // Prints "<name> graduates with a <degree> and finds a job in <major>."
+        // Prints "<name> graduates with a <degree> and finds a job in <major>."
+        s->graduate(s);
 
         Grad *g = Person_downcast_Grad(p2);
         assert(Student_downcast_Grad(s) == g);
@@ -308,7 +291,8 @@ main(int argc, char *argv[]) {
 
         Professor *p = Person_downcast_Professor(p3);
         Professor_print(p); // Prints "Office: <office>"
-        p->research(p, "computers"); // Must print "<name> does research in <topic>."
+        // Must print "<name> does research in <topic>."
+        p->research(p, "computers");
         p->research(p, "frogs");
 
         // Check that other downcasts fail.
@@ -328,13 +312,15 @@ main(int argc, char *argv[]) {
      */
 
     {
-        // This creates a List of pointers to Person objects.  It corresponds to
-        // what in real C++ might be std::set<Person *>.  Note that it is not a
-        // List of Person objects, but rather of _pointers_ to Person
-        // objects.
+        // This creates a List of pointers to Person objects.  It
+        // corresponds to what in real C++ might be std::list<Person *>.
+        // Note that it is not a List of Person objects, but rather of
+        // _pointers_ to Person objects.
         List_PersonPtr *list = List_PersonPtr_new(PersonPtr_less);
 
-        // Should print "---- List_PersonPtr, 15".
+        // Should print "---- List_PersonPtr, 15".  Note that 15
+        // is the length of "List_PersonPtr" including the 0 byte
+        // at the end..
         printf("---- %s, %d\n", list->type, (int) sizeof(list->type));
 
         // Insert people into the List.
@@ -351,12 +337,13 @@ main(int argc, char *argv[]) {
         {
             // Returns an iterator pointing to the first element.
             List_PersonPtr_Iterator it1 = list->begin(list);
-            // Returns an iterator pointing to one PAST the last element.  This
-            // iterator is obviously conceptual only.  It cannot be dereferenced.
+            // Returns an iterator pointing to one PAST the last element.
+            // This iterator is obviously conceptual only.  It cannot be
+            // dereferenced.
             List_PersonPtr_Iterator it2 = list->end(list);
 
-            // inc() advances the iterator forward.  dec() decrements the iterator
-            // so it points to the preceding element.
+            // inc() advances the iterator forward.  dec() decrements the
+            // iterator so it points to the preceding element.
             it1.inc(&it1); // Second node now.
             it1.inc(&it1); // Third node now.
             it2.dec(&it2); // Fourth node now.
@@ -389,8 +376,8 @@ main(int argc, char *argv[]) {
         // Print the whole thing now, to verify ordering.
         printf("---- Before erasures.\n");
 
-        // Iterate through the whole List, and call work() on each
-        // Person.  deref() returns what the iterator was pointing to.
+        // Iterate through the whole List, and call work() on each Person.
+        // deref() returns what the iterator was pointing to.
         for (List_PersonPtr_Iterator it = list->begin(list);
          !List_PersonPtr_Iterator_equal(it, list->end(list)); it.inc(&it)) {
             Person *p = it.deref(&it);
@@ -402,7 +389,7 @@ main(int argc, char *argv[]) {
         traverse(*list, 3);
 
         // Test multiple List at the same time.
-        printf("---- Multiple List\n");
+        printf("---- Multiple List objects\n");
         traverse2(4);
 
         /*
@@ -460,7 +447,7 @@ main(int argc, char *argv[]) {
     /*
      * Test List with MyClass.
      */
-/*
+
     {
         MyClass m1, m2, m3, m4, m5;
         m1.num = 0;
@@ -470,11 +457,14 @@ main(int argc, char *argv[]) {
         m5.num = -999;
         List_MyClass* list = List_MyClass_new(MyClass_less);
 
-        // Should print "---- List_MyClass, 13".
+        // Should print "---- List_MyClass, 13".  Note that 13
+        // is the length of "List_MyClass" including the 0 byte
+        // at the end..
         printf("---- %s, %d\n", list->type, (int) sizeof(list->type));
 
         List_MyClass_Iterator it;
         // Empty container, should print nothing.
+        printf("---- List_MyClass contains: ");
         for (it = list->begin(list);
          !List_MyClass_Iterator_equal(it, list->end(list)); it.inc(&it)) {
             MyClass m = it.deref(&it);
@@ -486,9 +476,11 @@ main(int argc, char *argv[]) {
         list->push_front(list, m2);
         list->push_back(list, m3);
         list->push_back(list, m4);
+        list->push_front(list, m5);
         list->sort(list);
 
-        // Should print 0.0 1.0 2.0 3.0
+        // Should print: ---- List_MyClass contains: -999.0 0.0 1.0 2.0 3.0
+        printf("---- List_MyClass contains: ");
         for (it = list->begin(list);
          !List_MyClass_Iterator_equal(it, list->end(list)); it.inc(&it)) {
             MyClass m = it.deref(&it);
@@ -498,7 +490,8 @@ main(int argc, char *argv[]) {
 
         // Erase the first element.
         list->erase(list, list->begin(list));
-        // Should print "1.0 2.0 3.0".
+        // Should print: "---- List_MyClass contains: 0.0 1.0 2.0 3.0"
+        printf("---- List_MyClass contains: ");
         for (it = list->begin(list);
          !List_MyClass_Iterator_equal(it, list->end(list)); it.inc(&it)) {
             MyClass m = it.deref(&it);
@@ -508,7 +501,8 @@ main(int argc, char *argv[]) {
 
         // Erase the new first element.
         list->erase(list, list->begin(list));
-        // Should print "2.0 3.0".
+        // Should print "1.0 2.0 3.0".
+        printf("---- List_MyClass contains: ");
         for (it = list->begin(list);
          !List_MyClass_Iterator_equal(it, list->end(list)); it.inc(&it)) {
             MyClass m = it.deref(&it);
@@ -520,7 +514,8 @@ main(int argc, char *argv[]) {
         it = list->end(list);
         it.dec(&it); // It now points to last element.
         list->erase(list, it);
-        // Should print "2.0".
+        // Should print "1.0 2.0".
+        printf("---- List_MyClass contains: ");
         for (it = list->begin(list);
          !List_MyClass_Iterator_equal(it, list->end(list)); it.inc(&it)) {
             MyClass m = it.deref(&it);
@@ -530,7 +525,8 @@ main(int argc, char *argv[]) {
 
         // Erase the last element.
         list->erase(list, list->begin(list));
-        // Should print nothing.
+        // Should print: "2.0".
+        printf("---- List_MyClass contains: ");
         for (it = list->begin(list);
                 !List_MyClass_Iterator_equal(it, list->end(list)); it.inc(&it)) {
             MyClass m = it.deref(&it);
@@ -540,12 +536,400 @@ main(int argc, char *argv[]) {
 
         list->delet(list);
     }
-*/
 
- /*
+    /*
+     * Test List with plain int.
+     */
+
+    {
+        List_int* list = List_int_new(int_less);
+        // Should print "---- List_int, 9".  Note that 9 is the length
+        // of "List_int", including the 0 byte at the end.
+        printf("---- %s, %d\n", list->type, (int) sizeof(list->type));
+
+        List_int_Iterator it;
+        // Empty container, should print nothing.
+        printf("---- List_int contains: ");
+        for (it = list->begin(list);
+         !List_int_Iterator_equal(it, list->end(list)); it.inc(&it)) {
+            printf("%d ", it.deref(&it));
+        }
+        printf("\n");
+
+        list->push_back(list, 4);
+        list->push_back(list, 3);
+        list->push_back(list, 0);
+        list->push_back(list, 2);
+        list->push_back(list, 1);
+        list->sort(list);
+
+        // Should print "0 1 2 3 4".
+        printf("---- List_int contains: ");
+        for (it = list->begin(list);
+         !List_int_Iterator_equal(it, list->end(list)); it.inc(&it)) {
+            printf("%d ", it.deref(&it));
+        }
+        printf("\n");
+
+        // Insert dupes.
+        list->push_back(list, 4);
+        list->push_back(list, 3);
+        list->push_back(list, 0);
+        list->push_back(list, 2);
+        list->push_back(list, 1);
+        list->sort(list);
+        // Should print "0 0 1 1 2 2 3 3 4 4".
+        printf("---- List_int contains: ");
+        for (it = list->begin(list);
+         !List_int_Iterator_equal(it, list->end(list)); it.inc(&it)) {
+            printf("%d ", it.deref(&it));
+        }
+        printf("\n");
+
+        // Erase the first element.
+        list->erase(list, list->begin(list));
+
+        // Erase the new first element.
+        list->erase(list, list->begin(list));
+
+        // Erase the element in the end.
+        it = list->end(list);
+        it.dec(&it); // It now points to last element.
+        list->erase(list, it);
+        // Should print: ---- List_int contains: 1 1 2 2 3 3 4
+        printf("---- List_int contains: ");
+        for (it = list->begin(list); !List_int_Iterator_equal(it, list->end(list)); it.inc(&it))
+            printf("%d ", it.deref(&it));
+        printf("\n");
+
+        // Erase all elements.
+        list->erase(list, list->begin(list));
+        list->erase(list, list->begin(list));
+        // Should print: ---- List_int contains: 2 2 3 3 4
+        printf("---- List_int contains: ");
+        for (it = list->begin(list); !List_int_Iterator_equal(it, list->end(list)); it.inc(&it))
+            printf("%d ", it.deref(&it));
+        printf("\n");
+
+        list->delet(list);
+    }
+
+    /*
      * Stress test List.
      */
 
+    if (iterations > 0) {
 
+        List_Stress* list = List_Stress_new(Stress_less);
 
+        // Used to mirror the operations, to verify that the List
+        // implementation is behaving correctly.
+        typedef std::list<int> mirror_t;
+        mirror_t mirror;
+
+        typedef std::pair<List_Stress_Iterator, mirror_t::iterator> pair_t;
+        typedef std::list<pair_t> iters_t;
+        // Used to store a list of iterators, to test iterators.  We keep
+        // one iterator per element.  This invariant is not crucial to the
+        // test, but it's a simple way of figuring out how many iterators
+        // to keep.  Note that it's possible that two iterators point to
+        // the same element (since we also test incrementing and
+        // decrementing the iterators), but we maintain the number.
+        iters_t iters;
+
+        std::cout << "---- Starting stress test with " << iterations
+         << " iterations:" << std::endl;
+
+        const int N = iterations;
+
+        // Keep track of some statistics, to verify that the test
+        // is behaving properly.
+        int n_inserted = 0, n_erased = 0, n_iters_changed = 0, n_empty = 0,
+         n_sorted = 0, n_erase_iterator_is_end = 0;
+        double avg_size = 0;
+
+        for (int i = 0; i < N; ++i) {
+
+            // printf("======== Iteration %d\n", i);
+
+            double op = drand48();
+
+            // The probability of removal should be slightly higher than the
+            // probability of insertion so that the List is often empty.
+            if (op < .35) {
+
+                // Insert an element.
+
+                List_Stress_Iterator it;
+                mirror_t::iterator mirror_it;
+                int v = rand_int(0, 1000000);
+                if (drand48() < .5) {
+                    // Do push_front().
+                    // printf("Pushing %d to the front.\n", v);
+                    mirror.push_front(v);
+                    mirror_it = mirror.begin();
+                    it = list->push_front(list, v);
+                } else {
+                    // Do push_back().
+                    // printf("Pushing %d to the back.\n", v);
+                    mirror.push_back(v);
+                    mirror_it = --mirror.end();
+                    it = list->push_back(list, v);
+                }
+
+                // Store an iterator for the new element.
+                iters.push_back(make_pair(it, mirror_it));
+
+                ++n_inserted;
+
+            } else if (op < .85) {
+
+                // Erase an element.
+                if (iters.size() != 0) {
+
+                    // Pick a random iterator to use for erasing.
+                    int index = rand_int(0, iters.size() - 1);
+                    iters_t::iterator iters_it = iters.begin();
+                    while(index--) { ++iters_it; }
+
+                    List_Stress_Iterator &it(iters_it->first);
+                    // The iterator should not be the end iterator.  If it
+                    // is, we simply skip this operation.  Note that we
+                    // cannot keep picking iterators till we find one that
+                    // is not the end iterator, because there might not be
+                    // any such iterators.
+                    if (!List_Stress_Iterator_equal(it, list->end(list))) {
+
+                        mirror_t::iterator &mirror_it(iters_it->second);
+
+                        // printf("Removing %d element.\n", index + 1);
+
+                        // Find all other iterators pointing to the same
+                        // element, and remove.  We need to do this since
+                        // those iterators will be invalidated once this
+                        // iterator is removed.  Keep track of how many
+                        // were removed, though, so we can add back that
+                        // many iterators, so as to keep the same number of
+                        // iterators as there are elements.
+                        size_t n_removed = 0;
+                        iters_t::iterator next;
+                        for (iters_t::iterator i = iters.begin(); i != iters.end(); i = next) {
+                            iters_t::iterator tmp = i; next = ++i; i = tmp;
+                            List_Stress_Iterator &it2(i->first);
+                            if (i != iters_it && List_Stress_Iterator_equal(it, it2)) {
+                                iters.erase(i);
+                                n_removed++;
+                            }
+                        }
+
+                        mirror.erase(mirror_it);
+                        list->erase(list, it);
+                        iters.erase(iters_it);
+
+                        // Create new iterators to replace the deleted ones.
+                        for (size_t i = 0; i < n_removed; i++) {
+                            List_Stress_Iterator it = list->begin(list);
+                            mirror_t::iterator mirror_it = mirror.begin();
+                            // New iterator could point to end.
+                            int index = rand_int(0, mirror.size());
+                            while (index--) {
+                                assert(!List_Stress_Iterator_equal(it, list->end(list)));
+                                assert(mirror_it != mirror.end());
+                                it.inc(&it); ++mirror_it;
+                            }
+                            iters.push_back(make_pair(it, mirror_it));
+                        }
+
+                        ++n_erased;
+
+                    } else {
+
+                        ++n_erase_iterator_is_end;
+                    }
+                }
+
+            } else if (op < .98) {
+
+                // Increment or decrement an iterator.
+
+                // Size of containers should be same
+                assert(iters.size() == mirror.size());
+
+                // If the container is empty, skip
+                if (iters.size() != 0) {
+
+                    // Pick a random index
+                    int index = rand_int(0, iters.size() - 1);
+                    iters_t::iterator iit = iters.begin();
+                    while(index--) { ++iit; }
+
+                    List_Stress_Iterator &it(iit->first);
+                    mirror_t::iterator &mirror_it(iit->second);
+
+                    // If it is the begin(), then only increment.  If it is
+                    // end(), then only decrement.  Otherwise, pick either
+                    // forward or backward.
+                    if (List_Stress_Iterator_equal(it, list->begin(list))) {
+                        // printf("Incrementing iterator pointing to %d.\n", int(it.deref(&it).val));
+                        it.inc(&it);
+                        ++mirror_it;
+                    } else if (List_Stress_Iterator_equal(it, list->end(list))) {
+                        // printf("Decrementing end iterator.\n");
+                        it.dec(&it);
+                        --mirror_it;
+                    } else {
+                        if (rand_int(0, 1)%2 == 0) {
+                            // printf("Incrementing iterator pointing to %d.\n", int(it.deref(&it).val));
+                            it.inc(&it);
+                            ++mirror_it;
+                        } else {
+                            // printf("Decrementing iterator pointing to %d.\n", int(it.deref(&it).val));
+                            it.dec(&it);
+                            --mirror_it;
+                        }
+                    }
+
+                    ++n_iters_changed;
+                }
+
+            } else {
+
+                // Sort the container.
+
+                list->sort(list);
+                mirror.sort();
+                ++n_sorted;
+            }
+
+            assert(iters.size() == mirror.size());
+            avg_size += double(mirror.size())/N;
+
+            if (iters.size() == 0) {
+                ++n_empty;
+            }
+
+            /*
+            {
+                printf("---- List contents\n");
+                List_Stress_Iterator it = list->begin(list);
+                while (!List_Stress_Iterator_equal(it, list->end(list))) {
+                    printf("%d\n", it.deref(&it).val);
+                    it.inc(&it);
+                }
+                printf("---- Mirror contents\n");
+                for (mirror_t::iterator it = mirror.begin(); it != mirror.end(); ++it) {
+                    std::cout << *it << std::endl;
+                }
+                printf("---- Iterators\n");
+                for (iters_t::iterator it = iters.begin(); it != iters.end(); ++it) {
+                    List_Stress_Iterator &lit(it->first);
+                    if (!List_Stress_Iterator_equal(lit, list->end(list))) {
+                        std::cout << "list it: " << it->first.deref(&it->first).val << ", ";
+                        std::cout << "mirror it: " << *it->second << std::endl;
+                    } else {
+                        std::cout << "end it." << std::endl;
+                    }
+                }
+            }
+            */
+
+            check(list, mirror);
+        }
+
+        std::cout << "---- Finished stress test." << std::endl;
+        std::cout << "----     inserted: " << n_inserted << " times" << std::endl;
+        std::cout << "----     erased: " << n_erased << " times" << std::endl;
+        std::cout << "----     iterators changed: " << n_iters_changed << " times" << std::endl;
+        std::cout << "----     sorted: " << n_sorted << " times" << std::endl;
+        std::cout << "----     empty count: " << n_empty << std::endl;
+        std::cout << "----     end iterator chosen for erase: " << n_erase_iterator_is_end << std::endl;
+        std::cout << "----     avg size: " << avg_size << std::endl;
+
+        list->delet(list);
+    }
+}
+
+void
+check(List_Stress *list, std::list<int> &mirror) {
+
+    // Check if the reference container and stress container are identical.
+    List_Stress_Iterator it = list->begin(list);
+    std::list<int>::iterator mit = mirror.begin();
+
+    for( ; !List_Stress_Iterator_equal(it, list->end(list)) && mit != mirror.end(); it.inc(&it), ++mit) {
+        Stress e = it.deref(&it);
+        if (e.val != *mit) {
+            fprintf(stderr, "Reference tree and test tree differ.\n");
+            abort();
+        }
+    }
+
+    if(!List_Stress_Iterator_equal(it, list->end(list)) || mit!=mirror.end()) {
+        fprintf(stderr, "Reference tree and test tree differ.\n");
+        abort();
+    }
+}
+
+// Test single list being traversed by multiple iterators simultaneously.
+void
+traverse(List_PersonPtr &list, int level) {
+    for (List_PersonPtr_Iterator it = list.begin(&list);
+     !List_PersonPtr_Iterator_equal(it, list.end(&list)); it.inc(&it)) {
+        Person_print(it.deref(&it));
+        if (level != 0) {
+            traverse(list, level - 1);
+        }
+    }
+}
+
+// Test multiple lists.
+void
+traverse2(int level) {
+
+    List_PersonPtr *list = List_PersonPtr_new(PersonPtr_less);
+
+    struct Local {
+        static Person *person() {
+            char name[30];
+            sprintf(name, "Jane%d", int(10000*drand48()));
+            return (Person *) Professor_new(name, 'F', "T-10");
+        }
+    };
+
+    for (int i = 0; i < 4; i++) {
+        Person *p = Local::person();
+        List_PersonPtr_Iterator it = list->push_back(list, p);
+        // If a duplicate (unlikely but possible), free it, because it
+        // didn't get inserted.
+        if (List_PersonPtr_Iterator_equal(it, list->end(list))) {
+            p->delet(p);
+        }
+    }
+
+    for (List_PersonPtr_Iterator it = list->begin(list);
+     !List_PersonPtr_Iterator_equal(it, list->end(list));
+     it.inc(&it)) {
+        Person_print(it.deref(&it));
+        if (level != 0) {
+            traverse2(level - 1);
+        }
+    }
+
+    // Remove from List before deleting, to avoid having pointers to
+    // deleted Person objects in the List, which can mess up
+    // some algorithms for incrementing.
+    {
+        std::vector<Person *> del_list;
+        for (List_PersonPtr_Iterator it = list->begin(list);
+         !List_PersonPtr_Iterator_equal(it, list->end(list));
+         it.inc(&it)) {
+            del_list.push_back(it.deref(&it));
+        }
+
+        list->delet(list);
+
+        for (size_t i = 0; i < del_list.size(); i++) {
+            del_list.at(i)->delet(del_list.at(i));
+        }
+    }
 }
