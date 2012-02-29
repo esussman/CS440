@@ -123,13 +123,17 @@ List_PersonPtr_Iterator SortedMerge(List_PersonPtr *list, List_PersonPtr_Iterato
 }
 List_PersonPtr_Iterator node_sort(List_PersonPtr *list, List_PersonPtr_Iterator begin, List_PersonPtr_Iterator end)
 {
-  List_PersonPtr_Iterator it_inc = begin;
-  it_inc.inc(&it_inc);
   List_PersonPtr_Iterator res1;
   List_PersonPtr_Iterator res2;
 
-  List_PersonPtr_Iterator slow = begin;
-  if(!List_PersonPtr_Iterator_equal(it_inc, end)) {
+  if(begin.node == end.node)
+  {
+    begin.node->next = NULL;
+    return begin;
+  }
+  else
+  {
+    List_PersonPtr_Iterator slow = begin;
     List_PersonPtr_Iterator fast = begin;
     fast.inc(&fast);
     while(!List_PersonPtr_Iterator_equal(fast,end))
@@ -141,21 +145,12 @@ List_PersonPtr_Iterator node_sort(List_PersonPtr *list, List_PersonPtr_Iterator 
         slow.inc(&slow);
       }
     }
-    List_PersonPtr_Iterator slow_hold = slow;
-    slow.inc(&slow);
-    slow_hold.node->next = NULL;
-    res1 = node_sort(list, begin, slow_hold);
-    res2 = node_sort(list, slow, end);
-  }
-  else
-  {
-    slow.inc(&slow);
-    begin.node->next = NULL;
+    List_PersonPtr_Iterator slow_next = slow;
+    slow_next.inc(&slow_next);
     slow.node->next = NULL;
-    res1 = begin;
-    res2 = slow;
+    res1 = node_sort(list, begin, slow);
+    res2 = node_sort(list, slow_next, end);
   }
-
   return SortedMerge(list, res1, res2);
 }
 void reinsertPrevPointers(List_PersonPtr* list)
@@ -166,7 +161,6 @@ void reinsertPrevPointers(List_PersonPtr* list)
   {
     fast->prev = slow;
     fast = fast->next;
-    slow = slow->next;
   }
   fast->next = &list->head;
   list->head.prev = fast;
