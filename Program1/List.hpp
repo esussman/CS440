@@ -50,7 +50,6 @@ bool List_PersonPtr_Iterator_equal (List_PersonPtr_Iterator it1, List_PersonPtr_
     return false;
 }
 
-
 void List_PersonPtr_it_inc(List_PersonPtr_Iterator* it) {
     it->node = it->node->next;
 }
@@ -91,64 +90,56 @@ List_PersonPtr_Iterator push_back(List_PersonPtr_* list, Person* person)
   return it;
 }
 
-Node* node_sort(Node* list, bool (*compare)(const PersonPtr &p1, const PersonPtr &p2))
+List_PersonPtr_Iterator SortedMerge(List_PersonPtr *list, List_PersonPtr_Iterator begin, List_PersonPtr_Iterator slow, List_PersonPtr_Iterator end)
 {
-  int listSize=1,numMerges,leftSize,rightSize;
-    Node *tail,*left,*right,*next;
-    if (!list || !list->next) return list;
-    do {
-        numMerges=0,left=list;tail=list=0;
-        while (left) {
-            numMerges++,right=left,leftSize=0,rightSize=listSize;
-            while (right && leftSize<listSize) leftSize++,right=right->next;
-            while (leftSize>0 || (rightSize>0 && right)) {
-                if (!leftSize)                  {
-                  next=right;
-                  right=right->next;
-                  rightSize--;
-                }
-                else if (!rightSize || !right)
-                {
-                  next=left;
-                  left=left->next;
-                  leftSize--;
-                }
-                else if (compare(left->person,right->person))
-                {
-                  next=left;
-                  left=left->next;
-                  leftSize--;
-                }
-                else
-                {
-                  next=right;
-                  right=right->next;
-                  rightSize--;
-                }
-                if (tail)
-                  tail->next=next;
-                else list=next;
-                next->prev=tail;
-                tail=next;
-            }
-            left=right;
-        }
-        tail->next=0,listSize<<=1;
-    } while (numMerges>1);
-    return list;
+  List_PersonPtr_Iterator middle = slow;
+  // A: begin, slow
+  // B: slow, end
+  while(!List_PersonPtr_Iterator_equal(begin, slow) && !List_PersonPtr_Iterator_equal(middle, end))
+  {
+    if(list->compare(begin.deref(&begin), middle.deref(&middle)))
+    {
+      begin.inc(&begin);
+    }
+    else
+    {
+      List_Person_Iterator temp = middle;
+      middle.inc(&middle);
+      temp.node->next = begin.node;
+    }
+  }
+  return slow;
+}
+List_PersonPtr_Iterator node_sort(List_PersonPtr *list, List_PersonPtr_Iterator begin, List_PersonPtr_Iterator end)
+{
+  List_PersonPtr_Iterator it_inc = begin;
+  it_inc.inc(&it_inc);
+
+  List_PersonPtr_Iterator slow = begin;
+  if(!List_PersonPtr_Iterator_equal(it_inc, end)) {
+    List_PersonPtr_Iterator fast = begin;
+    fast.inc(&fast);
+    while(!List_PersonPtr_Iterator_equal(fast,end))
+    {
+      fast.inc(&fast);
+      if(!List_PersonPtr_Iterator_equal(fast,end))
+      {
+        fast.inc(&fast);
+        slow.inc(&slow);
+      }
+    }
+    begin = node_sort(list, begin, slow);
+    node_sort(list, slow, end);
+  }
+
+  return SortedMerge(list, begin, slow, end);
 }
 
 void sort(List_PersonPtr* list)
 {
-  list->head.prev->next = NULL;
-  Node *reattach = node_sort(list->head.next, list->compare);
-  reattach->prev = &list->head;
-  while(reattach->next != NULL)
-  {
-    reattach = reattach->next;
-  }
-  reattach->next = &list->head;
-  list->head.prev = reattach;
+  List_PersonPtr_Iterator end = list->end(list);
+  List_PersonPtr_Iterator head = node_sort(list, list->begin(list), end);
+  list->head.next = head.node;
 }
 
 void erase(List_PersonPtr_* list, List_PersonPtr_Iterator it)
