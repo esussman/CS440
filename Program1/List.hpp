@@ -94,51 +94,32 @@ List_PersonPtr_Iterator SortedMerge(List_PersonPtr *list, List_PersonPtr_Iterato
 {
   // A: begin, slow
   // B: slow, end
-  List_PersonPtr_Iterator pleasework = List_PersonPtr_it_ctor(a.node);
-  while(a.node->next != NULL || b.node->next != NULL)
-  {
-    if(list->compare(a.deref(&a), b.deref(&b)))
-    {
-      if(list->compare(a.deref(&a), pleasework.deref(&pleasework)))
-      {
-        pleasework = a;
-      }
-      List_PersonPtr_Iterator temp = a;
-      temp.inc(&temp);
-      a = temp;
-    }
-    else
-    {
-      if(list->compare(b.deref(&b), pleasework.deref(&pleasework)))
-      {
-        pleasework = b;
-      }
-      List_PersonPtr_Iterator temp = b;
-      temp.inc(&temp);
-      b.node->next = a.node;
-      a.node->prev = b.node;
-      b = temp;
-    }
-  }
+  if(a.node == NULL)
+    return b;
+  else if(b.node == NULL)
+    return a;
+
+  List_PersonPtr_Iterator result;
   if(list->compare(a.deref(&a), b.deref(&b)))
   {
-      if(list->compare(a.deref(&a), pleasework.deref(&pleasework)))
-      {
-        pleasework = a;
-      }
-    a.node->next = b.node;
-    b.node->prev = a.node;
+    List_PersonPtr_Iterator temp = a;
+    temp.inc(&temp);
+    result = a;
+    b = SortedMerge(list, temp, b);
+    result.node->next = b.node;
+    b.node->prev = result.node;
   }
   else
   {
-      if(list->compare(b.deref(&b), pleasework.deref(&pleasework)))
-      {
-        pleasework = b;
-      }
-    b.node->next = a.node;
-    a.node->prev = b.node;
+    List_PersonPtr_Iterator temp = b;
+    temp.inc(&temp);
+    result = b;
+    a = SortedMerge(list, a , temp);
+    result.node->next = a.node;
+    a.node->prev = result.node;
   }
-  return pleasework;
+
+  return result;
 }
 List_PersonPtr_Iterator node_sort(List_PersonPtr *list, List_PersonPtr_Iterator begin, List_PersonPtr_Iterator end)
 {
@@ -184,8 +165,8 @@ void reinsertPrevPointers(List_PersonPtr* list)
   while(fast->next != NULL)
   {
     fast->prev = slow;
-    slow = slow->next;
     fast = fast->next;
+    slow = slow->next;
   }
   fast->next = &list->head;
   list->head.prev = fast;
