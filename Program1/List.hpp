@@ -1,3 +1,7 @@
+#ifndef MACROISHERE
+
+#define MACROISHERE
+
 #define List_DEFINE(arg)\
 \
 typedef arg* arg##Ptr;\
@@ -220,3 +224,5 @@ List_##arg* List_##arg##_new(bool (*compare)(const arg &p1, const arg &p2))\
   List->delet = List_##arg##_delet;\
   return List;\
 }
+
+#endif

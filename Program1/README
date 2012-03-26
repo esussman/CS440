@@ -1,0 +1,10 @@
+Evan Sussman - 00056096
+
+The three files will work with the given test.cpp. I come into an error with the stress test when i = 110.
+I tried to debug this and saw that the list was only a sentinel and one node value of 21. I tested my sort 
+code with as many different possibilities as I could such as only one element with a sentinel node(the problem) 
+and random numbered lists but I could not come across any problems with the merge sort when using the non-macro file I have.
+It is difficult to work with the macro version to see EXACTLY what is wrong. Please let me know if you see what im doing wrong!!
+Thanks a lot,
+
+Evan

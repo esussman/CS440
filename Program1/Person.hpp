@@ -1,3 +1,7 @@
+#ifndef PERSONISHERE
+
+#define PERSONISHERE
+
 typedef struct Person_
 {
   char *name;
@@ -43,3 +47,4 @@ Grad* Person_downcast_Grad(Person* person);
 Professor* Person_downcast_Professor(Person* person);
 Grad* Student_downcast_Grad(Student* student);
 
+#endif
