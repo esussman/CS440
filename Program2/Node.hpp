@@ -3,8 +3,6 @@
 class Node {
   public:
     virtual ~Node();
-  public:
-
 };
 
 #endif
