@@ -4,13 +4,12 @@
 xml::Parser::Parser()
 {
   state = start;
+  tempString = NULL;
   root = NULL;
 }
-
 const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
 {
   state = start;
-  xml::String hold;
   for(unsigned int i = 0; i < sz; i++)
   {
     const char data = doc[i];

@@ -9,8 +9,10 @@ namespace xml{
     public:
       Parser();
       const Element* parse(const char *doc, size_t sz);
+      bool isProperName(String);
     private:
       Element *root;
+      String *tempString;
       enum {
         start = 0,
         name_or_namespace
