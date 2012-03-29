@@ -8,13 +8,15 @@ namespace xml{
       //Copy constructor
       String(const String &);
       String();
+      String(const char*, int);
+      void append(int);
       //Conversion to stf::string
       operator std::string() const;
       //Assigment.
       String &operator=(const String &);
 
     private:
-      char* contents;
+      const char* contents;
       int length;
   };
   //Comparison with std::string

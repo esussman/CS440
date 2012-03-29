@@ -20,6 +20,16 @@ xml::String::String()
   contents = NULL;
   length = 0;
 }
+xml::String::String(const char* str, int len)
+{
+  contents = str;
+  length = len;
+}
+void xml::String::append(int addSize)
+{
+  length += addSize;
+}
+
 /*
 bool xml::operator==(const std::string & s1, const String & s2)
 {
