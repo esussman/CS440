@@ -9,6 +9,12 @@ namespace xml{
     public:
       Parser();
       const Element* parse(const char *doc, size_t sz);
+    private:
+      Element *root;
+      enum {
+        start = 0,
+        name_or_namespace
+      } state;
   };
 
 }

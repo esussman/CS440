@@ -9,6 +9,8 @@ namespace xml {
 
   class Element : public Node {
     public:
+      Element();
+      ~Element();
       const String &name() const;
       const String &nmspace() const;
       size_t n_children() const;
@@ -19,8 +21,8 @@ namespace xml {
       static const Element *to_Element(const Node *);
     private:
       std::list<Node *> children;
-      const String elemName;
-      const String elemNameSpace;
+      String *elemName;
+      const String *elemNameSpace;
   };
 
 }

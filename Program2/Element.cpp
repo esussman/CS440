@@ -1,13 +1,23 @@
 #include "Element.hpp"
 #include <list>
 
+xml::Element::Element()
+{
+  elemName = NULL;
+  elemNameSpace = NULL;
+}
+xml::Element::~Element()
+{
+  delete(elemName);
+  delete(elemNameSpace);
+}
 const xml::String& xml::Element::name() const
 {
-  return elemName;
+  return *elemName;
 }
 const xml::String& xml::Element::nmspace() const
 {
-  return elemNameSpace;
+  return *elemNameSpace;
 }
 bool xml::Element::is_Element(const Node * n)
 {

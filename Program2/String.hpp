@@ -3,31 +3,32 @@
 #include <string>
 namespace xml{
 
-class String {
-  public:
-    //Copy constructor
-    String(const String &);
-    //Conversion to stf::string
-    operator std::string() const;
-    //Assigment.
-    String &operator=(const String &);
+  class String {
+    public:
+      //Copy constructor
+      String(const String &);
+      String();
+      //Conversion to stf::string
+      operator std::string() const;
+      //Assigment.
+      String &operator=(const String &);
 
-  private:
-    char* contents;
-    int length;
-};
+    private:
+      char* contents;
+      int length;
+  };
   //Comparison with std::string
-    bool operator==(const std::string &, const String &);
-    bool operator==(const String &, const std::string &);
-    bool operator!=(const std::string &, const String &);
-    bool operator!=(const String &, const std::string &);
-    //Comparison with C string
-    bool operator==(const char*, const String &);
-    bool operator==(const String &, const char *);
-    bool operator!=(const char *, const String &);
-    bool operator!=(const String &, const char *);
+  bool operator==(const std::string &, const String &);
+  bool operator==(const String &, const std::string &);
+  bool operator!=(const std::string &, const String &);
+  bool operator!=(const String &, const std::string &);
+  //Comparison with C string
+  bool operator==(const char*, const String &);
+  bool operator==(const String &, const char *);
+  bool operator!=(const char *, const String &);
+  bool operator!=(const String &, const char *);
 //Comparison with std::string.
-    std::ostream &operator<<(std::ostream &, const String &);
+  std::ostream &operator<<(std::ostream &, const String &);
 
 }
 #endif
