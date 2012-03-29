@@ -8,6 +8,7 @@ namespace xml {
   class Visitor;
 
   class Element : public Node {
+    friend class Parser;
     public:
       Element();
       ~Element();
