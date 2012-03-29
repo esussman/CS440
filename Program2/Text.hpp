@@ -8,6 +8,7 @@ namespace xml {
 
   class Text : public Node {
     public:
+      Text();
       const String& str() const;
       static bool is_Text(const Node*);
       static const Text *to_Text(const Node *);

@@ -1,5 +1,10 @@
 #include "Text.hpp"
 
+xml::Text::Text()
+{
+  contents = NULL;
+}
+
 const xml::String& xml::Text::str() const
 {
   return *contents;
