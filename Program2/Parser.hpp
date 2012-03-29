@@ -2,7 +2,7 @@
 #define EVAN_SUSSMAN_PARSER
 
 #include "Element.hpp"
-
+#include <stack>
 namespace xml{
 
   class Parser {
@@ -16,6 +16,7 @@ namespace xml{
     private:
       Element *root;
       String *tempString;
+      std::stack<Element *> nodeStack;
       enum {
         start = 0,
         name_or_namespace,
