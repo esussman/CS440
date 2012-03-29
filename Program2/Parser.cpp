@@ -7,6 +7,15 @@ xml::Parser::Parser()
   tempString = NULL;
   root = NULL;
 }
+void xml::Parser::resetTempString(const char* string)
+{
+  if(tempString == NULL)
+    tempString = new String(string,1);
+}
+bool xml::Parser::isValidChar(const char data)
+{
+  return isalnum(data) || data == '_';
+}
 const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
 {
   state = start;
@@ -32,10 +41,24 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
           }
               break;
         case name_or_namespace:
+          resetTempString(doc+i);
           if(isspace(data))
           {
 
           }
+          else if(data == '/')
+          {
+            //close tag
+          }
+          else if(data == ':')
+          {
+            //new state
+          }
+          else if(isValidChar(data))
+          {
+            (*tempString).append(1);
+          }
+
               break;
       }
       break;

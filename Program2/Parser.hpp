@@ -10,6 +10,8 @@ namespace xml{
       Parser();
       const Element* parse(const char *doc, size_t sz);
       bool isProperName(String);
+      void resetTempString(const char*);
+      bool isValidChar(const char);
     private:
       Element *root;
       String *tempString;
