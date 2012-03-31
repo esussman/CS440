@@ -2,6 +2,7 @@
 #define EVAN_SUSSMAN_PARSER
 
 #include "Element.hpp"
+#include "Text.hpp"
 #include <stack>
 namespace xml{
 
@@ -13,6 +14,7 @@ namespace xml{
       void resetTempString(const char*);
       bool isValidNameChar(const char);
       bool isValidTextChar(const char);
+      void saveText(Text*);
     private:
       Element *root;
       String *tempString;
@@ -21,7 +23,8 @@ namespace xml{
         start = 0,
         name_or_namespace,
         close_name_or_namespace,
-        inside_body
+        inside_body,
+        inside_text
       } state;
   };
 

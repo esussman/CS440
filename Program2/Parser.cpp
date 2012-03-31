@@ -13,6 +13,13 @@ xml::Parser::Parser()
   tempString = NULL;
   root = NULL;
 }
+void xml::Parser::saveText(Text *text)
+{
+  text->contents = tempString;
+  if(nodeStack.size() > 0)
+    nodeStack.top()->children.push_back(text);
+  tempString = NULL;
+}
 void xml::Parser::resetTempString(const char* string)
 {
   if(tempString == NULL)
@@ -24,7 +31,7 @@ bool xml::Parser::isValidNameChar(const char data)
 }
 bool xml::Parser::isValidTextChar(const char data)
 {
-  return data != '<';
+  return data != '<' && data != '>';
 }
 const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
 {
@@ -49,7 +56,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
           }
           else
           {
-            //throw error bad input
+            exit(9);
           }
             break;
         case name_or_namespace:
@@ -68,12 +75,12 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             dynamic_cast<Element*>(currentNode)->elemName = tempString;
             //add the element to the children of the current top element of the stack.
             if(nodeStack.size() != 0){
-              cout << "Parent " << *(*nodeStack.top()).elemName << endl;
               nodeStack.top()->children.push_back((Element*)currentNode);
             }
             nodeStack.push((Element*)currentNode);
             tempString = NULL;
             state = inside_body;
+            continue;
           }
           else if(isValidNameChar(data))
           {
@@ -90,30 +97,49 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
           {
               //Good name
             nodeStack.pop();
-            delete tempString;
             tempString = NULL;
             state = inside_body;
           }
               break;
-        case inside_body:
+        case inside_text:
           resetTempString(doc + i);
-          if(isValidTextChar(data))
+          if( data == '<')
+          {
+            //want to save the text.
+            //switch to inside_body and let that switch to name
+            saveText((Text*)currentNode);
+            state = inside_body;
+            continue;
+          }
+          else if(isValidTextChar(data))
           {
             (*tempString).append(1);
           }
-          if(data == '<')
-          {
-            state = name_or_namespace;
-            //you have the next you need, create an element and add it.
-            currentNode = new Element();
-            tempString = NULL;
-          }
+          else
+            exit(9);
+          break;
+        case inside_body:
+
           if(i == sz)
             return root;
+          else if(data == '<')
+          {
+            //must want to deal with the name
+            //delete currentNode;
+            currentNode = new Element();
+            state = name_or_namespace;
+          }
+          else if(data == '>')
+          {
+            //must be looking at text
+            currentNode = new Text();
+            state = inside_text;
+            //continue;
+          }
           break;
       }
       break;
     }
   }
-  return 0;
+  return root;
 }
