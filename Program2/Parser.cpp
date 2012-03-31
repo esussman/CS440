@@ -15,9 +15,9 @@ xml::Parser::Parser()
 }
 void xml::Parser::saveText(Text *text)
 {
-  text->contents = tempString;
+  dynamic_cast<Text*>(text)->contents = tempString;
   if(nodeStack.size() > 0)
-    nodeStack.top()->children.push_back(text);
+    nodeStack.top()->children.push_back((Text*)text);
   tempString = NULL;
 }
 void xml::Parser::resetTempString(const char* string)
@@ -97,6 +97,9 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
           {
               //Good name
             nodeStack.pop();
+            delete currentNode;
+            currentNode = NULL;
+            delete tempString;
             tempString = NULL;
             state = inside_body;
           }
@@ -125,8 +128,8 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
           else if(data == '<')
           {
             //must want to deal with the name
-            //delete currentNode;
             currentNode = new Element();
+            tempString = NULL;
             state = name_or_namespace;
           }
           else if(data == '>')
