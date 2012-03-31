@@ -3,6 +3,7 @@
 #include <list>
 #include "String.hpp"
 #include "Node.hpp"
+#include "Text.hpp"
 
 namespace xml {
   class Visitor;
@@ -20,11 +21,13 @@ namespace xml {
       //use RTTI
       static bool is_Element(const Node *);
       static const Element *to_Element(const Node *);
+      static const Text *to_Text(const Node *);
     private:
       std::list<Node *> children;
       String *elemName;
-      const String *elemNameSpace;
+     // const String *elemNameSpace;
   };
-
 }
+
+  #include "Visitor.hpp"
 #endif
