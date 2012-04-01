@@ -4,11 +4,25 @@
 #include "Element.hpp"
 #include "Text.hpp"
 #include <stack>
+#include <exception>
+
 namespace xml{
 
   class Parser {
     public:
       Parser();
+      class ParserError : public std::exception {
+        friend class Parser;
+        public:
+          ParserError(const char* m = "Parse Error") : msg(m) {};
+          ~ParserError() throw() {};
+          virtual const char *what() const throw()
+          {
+            return msg;
+          }
+        private:
+          const char* msg;
+      } ParserError;
       const Element* parse(const char *doc, size_t sz);
       bool isProperName(String);
       void resetTempString(const char*);

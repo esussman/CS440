@@ -40,109 +40,120 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
   for(unsigned int i = 0; i < sz; i++)
   {
     const char data = doc[i];
+    if(data == EOF)
+      break;
+
     while(true)
     {
-      switch(state)
+      try
       {
-        case start:
-          if(isspace(data))
-          {
-            //just go to next character...
-          }
-          else if(data == '<')
-          {
-            root = dynamic_cast<Element*>(currentNode);
-            state = name_or_namespace;
-          }
-          else
-          {
-            exit(9);
-          }
-            break;
-        case name_or_namespace:
-          resetTempString(doc+i);
-          if(isspace(data) && tempString != NULL)
-          {
-          }
-          else if(data == '/')
-          {
-            //close tag
-            tempString = NULL;
-            state = close_name_or_namespace;
-          }
-          else if(data == '>')
-          {
-            dynamic_cast<Element*>(currentNode)->elemName = tempString;
-            //add the element to the children of the current top element of the stack.
-            if(nodeStack.size() != 0){
-              nodeStack.top()->children.push_back((Element*)currentNode);
+        switch(state)
+        {
+          case start:
+            if(isspace(data))
+            {
+              //just go to next character...
             }
-            nodeStack.push((Element*)currentNode);
-            tempString = NULL;
-            state = inside_body;
-            continue;
-          }
-          else if(isValidNameChar(data))
-          {
-            (*tempString).append(1);
-          }
+            else if(data == '<')
+            {
+              root = dynamic_cast<Element*>(currentNode);
+              state = name_or_namespace;
+            }
+            else
+            {
+              exit(9);
+            }
               break;
-        case close_name_or_namespace:
-          resetTempString(doc + i);
-          if(isValidNameChar(data))
-          {
-            (*tempString).append(1);
-          }
-          if(data == '>')
-          {
-              //Good name
-            nodeStack.pop();
-            delete currentNode;
-            currentNode = NULL;
-            delete tempString;
-            tempString = NULL;
-            state = inside_body;
-          }
-              break;
-        case inside_text:
-          resetTempString(doc + i);
-          if( data == '<')
-          {
-            //want to save the text.
-            //switch to inside_body and let that switch to name
-            saveText((Text*)currentNode);
-            state = inside_body;
-            continue;
-          }
-          else if(isValidTextChar(data))
-          {
-            (*tempString).append(1);
-          }
-          else
-            exit(9);
-          break;
-        case inside_body:
-
-          if(i == sz)
-            return root;
-          else if(data == '<')
-          {
-            //must want to deal with the name
-            currentNode = new Element();
-            tempString = NULL;
-            state = name_or_namespace;
-          }
-          else if(data == '>')
-          {
-            //must be looking at text
-            currentNode = new Text();
-            state = inside_text;
-            //continue;
-          }
-          break;
+          case name_or_namespace:
+            resetTempString(doc+i);
+            if(isspace(data) && tempString != NULL)
+            {
+            }
+            else if(data == '/')
+            {
+              //close tag
+              tempString = NULL;
+              state = close_name_or_namespace;
+            }
+            else if(data == '>')
+            {
+              dynamic_cast<Element*>(currentNode)->elemName = tempString;
+              //add the element to the children of the current top element of the stack.
+              if(nodeStack.size() != 0){
+                nodeStack.top()->children.push_back((Element*)currentNode);
+              }
+              nodeStack.push((Element*)currentNode);
+              state = inside_body;
+            }
+            else if(isValidNameChar(data))
+            {
+              (*tempString).append(1);
+            }
+                break;
+          case close_name_or_namespace:
+            resetTempString(doc + i);
+            if(isValidNameChar(data))
+            {
+              (*tempString).append(1);
+            }
+            if(data == '>')
+            {
+                //Good name
+              nodeStack.pop();
+              delete currentNode;
+              currentNode = NULL;
+              delete tempString;
+              tempString = NULL;
+              state = inside_body;
+            }
+                break;
+          case inside_text:
+            if(nodeStack.size() == 0)
+              throw ParserError::ParserError("Hello WORLD!");
+            resetTempString(doc + i);
+            if( data == '<')
+            {
+              saveText((Text*)currentNode);
+              state = inside_body;
+              continue;
+            }
+            else if(isValidTextChar(data))
+            {
+              (*tempString).append(1);
+            }
+            else
+              exit(9);
+            break;
+          case inside_body:
+            if(i == sz)
+              return root;
+            else if(data == '<')
+            {
+              //must want to deal with the name
+              currentNode = new Element();
+              state = name_or_namespace;
+           }
+            else
+            {
+              //must be looking at text
+              currentNode = new Text();
+              tempString = NULL;
+              state = inside_text;
+              continue;
+            }
+            break;
+        }
+      }
+      catch(Parser::ParseError e)
+      {
+        cout << e.what() << endl;
+        exit(1);
       }
       break;
     }
   }
+
+  delete tempString;
+
   return root;
 }
