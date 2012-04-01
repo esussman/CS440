@@ -73,6 +73,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               else
               {
                 state = name_or_namespace;
+                continue;
               }
               break;
           case name_or_namespace:
@@ -83,6 +84,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             }
             else if(isspace(data))
             {
+              //maybe continue?
               state = tag_name_clear_ws;
             }
             else if(isValidNameChar(data))
@@ -166,7 +168,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               //must want to deal with the name
               currentNode = new Element();
-              state = name_or_namespace;
+              state = type_of_tag;
            }
             else
             {
