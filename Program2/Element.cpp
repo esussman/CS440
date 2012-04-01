@@ -11,7 +11,7 @@ xml::Element::~Element()
   delete elemName;
   //delete(elemNameSpace);
   for(std::list<Node*>::const_iterator it = children.begin(); it != children.end(); it++)
-    delete(*it);
+    delete *it;
 }
 const xml::String& xml::Element::name() const
 {
@@ -24,7 +24,7 @@ const xml::String& xml::Element::nmspace() const
 }
 bool xml::Element::is_Element(const Node * n)
 {
-  return dynamic_cast<const Element*>(n) != 0;
+  return dynamic_cast<const Element*>(n) != NULL;
 }
 const xml::Element *xml::Element::to_Element(const Node *n)
 {
@@ -46,31 +46,30 @@ size_t xml::Element::n_children() const
 }
 void xml::Element::accept(xml::Visitor * v) const
 {
-  Element e = *this;
-  v->start_element_visit(e);
-  for(std::list<Node*>::const_iterator it = children.begin(); it != children.end(); it++)
-  {
-    if(Element::is_Element(*it))
-    {
-      dynamic_cast<const Element*>(*it)->accept(v);
-    }
-    if(Text::is_Text(*it))
-    {
-      v->visit_text(*dynamic_cast<const Text*>(*it));
-    }
-  }
-  // v->start_element_visit(e);
-  // for(unsigned int i = 0; i < e.n_children(); i++)
+  // v->start_element_visit(*this);
+  // for(std::list<Node*>::const_iterator it = children.begin(); it != children.end(); it++)
   // {
-    // if(Element::is_Element(e.child(i)))
+    // if(Element::is_Element(*it))
     // {
-      // Element child = *dynamic_cast<const Element*>(e.child(i));
-      // child.accept(v);
+      // dynamic_cast<const Element*>(*it)->accept(v);
     // }
-    // else if(Text::is_Text(e.child(i)))
+    // if(Text::is_Text(*it))
     // {
-      // v->visit_text(*dynamic_cast<const Text*>(e.child(i)));
+      // v->visit_text(*dynamic_cast<const Text*>(*it));
     // }
   // }
-  v->end_element_visit(e);
+  v->start_element_visit(*this);
+  for(unsigned int i = 0; i < (*this).n_children(); i++)
+  {
+    if(Element::is_Element((*this).child(i)))
+    {
+      dynamic_cast<const Element*>((*this).child(i))->accept(v);
+
+    }
+    else if(Text::is_Text((*this).child(i)))
+    {
+      v->visit_text(*dynamic_cast<const Text*>((*this).child(i)));
+    }
+  }
+  v->end_element_visit(*this);
 }
