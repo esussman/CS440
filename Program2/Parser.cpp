@@ -65,12 +65,29 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               throw ParserError("Invalid Text before root tag.");
             }
               break;
+          case type_of_tag:
+              if(data == '/')
+              {
+                state = close_name_or_namespace;
+              }
+              else
+              {
+                state = name_or_namespace;
+              }
+              break;
           case name_or_namespace:
             resetTempString(doc+i);
-            if(data == '/')
+            if(isspace(data) && tempString->size() == 0)
             {
-              //close tag
-              state = close_name_or_namespace;
+              throw ParserError("No whitespace allowed before element name");
+            }
+            else if(isspace(data))
+            {
+              state = tag_name_clear_ws;
+            }
+            else if(isValidNameChar(data))
+            {
+              (*tempString).append(1);
             }
             else if(data == '>')
             {
@@ -83,23 +100,32 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               tempString = NULL;
               state = inside_body;
             }
-            else if(isValidNameChar(data))
-            {
-              (*tempString).append(1);
-            }
             else
             {
               throw ParserError("Unexpected input");
             }
                 break;
-
+          case tag_name_clear_ws:
+            if(isspace(data))
+            {
+              //dont do anything
+            }
+            else if(data == '>')
+            {
+              //save the element
+            }
+            break;
           case close_name_or_namespace:
             resetTempString(doc + i);
-            if(isValidNameChar(data))
+            if(isspace(data) && tempString->size() == 0)
+            {
+              throw ParserError("No whitespace allowed before element name");
+            }
+            else if(isValidNameChar(data))
             {
               (*tempString).append(1);
             }
-            if(data == '>')
+            else if(data == '>')
             {
                 //Good name
               nodeStack.pop();
