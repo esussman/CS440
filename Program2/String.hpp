@@ -10,6 +10,7 @@ namespace xml{
       String();
       String(const char*, int);
       void append(int);
+      int size();
       //Conversion to stf::string
       operator std::string() const;
       //Assigment.
@@ -20,7 +21,7 @@ namespace xml{
       int length;
   };
   //Comparison with std::string
-  bool operator==(const std::string &, const String &);
+  bool operator==(const std::string &, const xml::String &);
   bool operator==(const String &, const std::string &);
   bool operator!=(const std::string &, const String &);
   bool operator!=(const String &, const std::string &);
