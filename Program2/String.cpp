@@ -2,6 +2,10 @@
 #include "String.hpp"
 #include <string>
 
+int xml::String::size()
+{
+  return length;
+}
 std::ostream &xml::operator<<(std::ostream& stream, const xml::String& s1)
 {
   stream << (std::string)s1;
@@ -28,6 +32,10 @@ xml::String::String(const char* str, int len)
 void xml::String::append(int addSize)
 {
   length += addSize;
+}
+bool operator==(const std::string & s1, const xml::String & s2)
+{
+  return s1 == (std::string)s2;
 }
 
 /*
