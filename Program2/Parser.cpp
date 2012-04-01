@@ -1,4 +1,5 @@
 #include "Parser.hpp"
+#include "ParserException.hpp"
 #include "String.hpp"
 #include "Text.hpp"
 #include <iostream>
@@ -61,7 +62,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             }
             else
             {
-              exit(9);
+              throw ParserError("Invalid Text before root tag.");
             }
               break;
           case name_or_namespace:
@@ -90,6 +91,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               (*tempString).append(1);
             }
                 break;
+
           case close_name_or_namespace:
             resetTempString(doc + i);
             if(isValidNameChar(data))
@@ -107,9 +109,10 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               state = inside_body;
             }
                 break;
+
           case inside_text:
             if(nodeStack.size() == 0)
-              throw ParserError::ParserError("Hello WORLD!");
+              throw ParserError("Text outside of tags!");
             resetTempString(doc + i);
             if( data == '<')
             {
@@ -124,6 +127,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             else
               exit(9);
             break;
+
           case inside_body:
             if(i == sz)
               return root;
@@ -144,7 +148,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             break;
         }
       }
-      catch(Parser::ParseError e)
+      catch(ParserError e)
       {
         cout << e.what() << endl;
         exit(1);
