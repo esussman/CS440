@@ -109,6 +109,10 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               tempString = NULL;
               state = inside_body;
             }
+            else
+            {
+              throw ParserError("Unexpected input");
+            }
                 break;
 
           case inside_text:
@@ -126,7 +130,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               (*tempString).append(1);
             }
             else
-              exit(9);
+              throw ParserError("Unexpected input");
             break;
 
           case inside_body:
