@@ -67,13 +67,9 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               break;
           case name_or_namespace:
             resetTempString(doc+i);
-            if(isspace(data) && tempString != NULL)
-            {
-            }
-            else if(data == '/')
+            if(data == '/')
             {
               //close tag
-              tempString = NULL;
               state = close_name_or_namespace;
             }
             else if(data == '>')
@@ -84,11 +80,16 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
                 nodeStack.top()->children.push_back((Element*)currentNode);
               }
               nodeStack.push((Element*)currentNode);
+              tempString = NULL;
               state = inside_body;
             }
             else if(isValidNameChar(data))
             {
               (*tempString).append(1);
+            }
+            else
+            {
+              throw ParserError("Unexpected input");
             }
                 break;
 
@@ -141,7 +142,6 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               //must be looking at text
               currentNode = new Text();
-              tempString = NULL;
               state = inside_text;
               continue;
             }
