@@ -22,10 +22,12 @@ namespace xml{
       std::stack<Element *> nodeStack;
       enum {
         start = 0,
+        type_of_tag,
         name_or_namespace,
         close_name_or_namespace,
         inside_body,
-        inside_text
+        inside_text,
+        tag_name_clear_ws
       } state;
   };
 
