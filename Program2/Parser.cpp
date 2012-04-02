@@ -139,11 +139,11 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               throw ParserError("No whitespace between namespace and name");
             }
-            else if(isspace(data) && tempString->size() == 0)
+            else if(isspace(data) && tempString->size() > 0)
             {
               //go to clear ws name
+              state = tag_name_clear_ws;
             }
-
                 break;
           case tag_name_clear_ws:
             if(data == '>')
@@ -162,6 +162,10 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               //dont do anything
             }
+            else
+            {
+              throw ParserError("invald text after space");
+            }
             break;
           case close_name_or_namespace:
             resetTempString(doc + i);
@@ -173,7 +177,13 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               (*tempString).append(1);
             }
-            else if(data == '>' && nodeStack.top()->name() == *tempString)
+            else if(data == ':' && nodeStack.top()->nmspace() == *tempString)
+            {
+              delete tempString;
+              tempString = NULL;
+              state = close_must_be_name;
+            }
+            else if(data == '>' && nodeStack.top()->name() == *tempString && nodeStack.top()->nmspace() == String("",0))
             {
                 //Good name
               nodeStack.pop();
@@ -188,7 +198,31 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               throw ParserError("Unexpected input");
             }
                 break;
-
+          case close_must_be_name:
+            resetTempString(doc+i);
+            if(data == '>' && nodeStack.top()->name() == *tempString)
+            {
+              //check if the names are equal
+              nodeStack.pop();
+              delete currentNode;
+              currentNode = NULL;
+              delete tempString;
+              tempString = NULL;
+              state = inside_body;
+            }
+            else if(isValidNameChar(data))
+            {
+              (*tempString).append(1);
+            }
+            else if(isspace(data) && tempString->size() == 0)
+            {
+              throw ParserError("No whitespace between namespace and name");
+            }
+            else if(isspace(data) && tempString->size() == 0)
+            {
+              //go to get close_ws_endtag
+            }
+            break;
           case inside_text:
             if(nodeStack.size() == 0)
               throw ParserError("Text outside of tags!");
