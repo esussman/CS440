@@ -16,6 +16,7 @@ namespace xml{
       bool isValidNameChar(const char);
       bool isValidTextChar(const char);
       void saveText(Text*);
+      void saveElement(Element*);
     private:
       Element *root;
       String *tempString;
@@ -24,6 +25,7 @@ namespace xml{
         start = 0,
         type_of_tag,
         name_or_namespace,
+        must_be_name,
         close_name_or_namespace,
         inside_body,
         inside_text,
