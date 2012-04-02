@@ -150,12 +150,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               //save the element
               dynamic_cast<Element*>(currentNode)->elemName = tempString;
-              //add the element to the children of the current top element of the stack.
-              if(nodeStack.size() != 0){
-                nodeStack.top()->children.push_back((Element*)currentNode);
-              }
-              nodeStack.push((Element*)currentNode);
-              tempString = NULL;
+              saveElement((Element*)currentNode);
               state = inside_body;
             }
             else if(isspace(data))
@@ -164,8 +159,51 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             }
             else
             {
-              throw ParserError("invald text after space");
+              //must be xmlns must save element
+              dynamic_cast<Element*>(currentNode)->elemName = tempString;
+              saveElement((Element*)currentNode);
+              state = check_xmlns;
+              continue;
             }
+            break;
+          case check_xmlns:
+            resetTempString(doc + i);
+            if(data == ':' && *tempString == String("xmlns", 5))
+            {
+              delete tempString;
+              tempString = NULL;
+              state = def_namespace_name;
+            }
+            else if(isValidNameChar(data))
+            {
+              (*tempString).append(1);
+            }
+            break;
+          case def_namespace_name:
+            resetTempString(doc + i);
+            if(data == '=' && *tempString != String("",0))
+            {
+              //namespace name = tempString;
+              //move to quote state
+              state = namespace_quote;
+            }
+            if(isValidNameChar(data))
+            {
+              (*tempString).append(1);
+            }
+            else
+            {
+              throw ParserError("invalid xml found");
+            }
+            break;
+          case namespace_quote:
+            if(data == '"') {
+              state = namespace_definition;
+            }
+            else
+              throw ParserError("invald namespace definition, must start with \" ");
+            break;
+          case namespace_definition:
             break;
           case close_name_or_namespace:
             resetTempString(doc + i);
@@ -221,10 +259,30 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             else if(isspace(data) && tempString->size() > 0)
             {
               //go to get close_ws_endtag
+              state = close_tag_name_clear_ws;
             }
             else
             {
                throw ParserError("Names dont match!");
+            }
+            break;
+          case close_tag_name_clear_ws:
+            if(data == '>')
+            {
+              nodeStack.pop();
+              delete currentNode;
+              currentNode = NULL;
+              delete tempString;
+              tempString = NULL;
+              state = inside_body;
+            }
+            else if(isspace(data))
+            {
+              //dont do anything
+            }
+            else
+            {
+              throw ParserError("invald text after space");
             }
             break;
           case inside_text:
