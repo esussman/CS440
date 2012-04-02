@@ -13,8 +13,10 @@ namespace xml{
       int size();
       //Conversion to stf::string
       operator std::string() const;
+      friend bool operator==(const String &, const char *);
       //Assigment.
-      String &operator=(const String &);
+      bool operator==(const String&) const;
+      bool operator!=(const String&) const;
 
     private:
       const char* contents;
