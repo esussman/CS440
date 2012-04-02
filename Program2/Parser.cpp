@@ -21,6 +21,15 @@ void xml::Parser::saveText(Text *text)
     nodeStack.top()->children.push_back((Text*)text);
   tempString = NULL;
 }
+void xml::Parser::saveElement(Element *currentNode)
+{
+  dynamic_cast<Element*>(currentNode)->elemName = tempString;
+  //add the element to the children of the current top element of the stack.
+  if(nodeStack.size() != 0){
+    nodeStack.top()->children.push_back((Element*)currentNode);
+  }
+  nodeStack.push((Element*)currentNode);
+}
 void xml::Parser::resetTempString(const char* string)
 {
   if(tempString == NULL)
@@ -82,6 +91,11 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               throw ParserError("No whitespace allowed before element name");
             }
+            else if(data == ':' && tempString->size() != 0)
+            {
+              //previous text must be namespace
+              dynamic_cast<Element*>(currentNode)->elemNameSpace = tempString;
+            }
             else if(isspace(data))
             {
               //maybe continue?
@@ -107,14 +121,19 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               throw ParserError("Unexpected input");
             }
                 break;
+          case must_be_name:
+                break;
           case tag_name_clear_ws:
-            if(isspace(data))
-            {
-              //dont do anything
-            }
-            else if(data == '>')
+            if(data == '>')
             {
               //save the element
+              saveElement((Element*)currentNode);
+              tempString = NULL;
+              state = inside_body;
+            }
+            else if(isspace(data))
+            {
+              //dont do anything
             }
             break;
           case close_name_or_namespace:
