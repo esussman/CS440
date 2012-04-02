@@ -4,7 +4,7 @@
 xml::Element::Element()
 {
   elemName = NULL;
-  elemNameSpace = new String("",0);
+  elemNameSpace = NULL;
 }
 xml::Element::~Element()
 {
