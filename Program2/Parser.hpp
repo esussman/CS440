@@ -27,6 +27,7 @@ namespace xml{
         name_or_namespace,
         must_be_name,
         close_name_or_namespace,
+        close_must_be_name,
         inside_body,
         inside_text,
         tag_name_clear_ws
