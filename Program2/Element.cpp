@@ -4,12 +4,12 @@
 xml::Element::Element()
 {
   elemName = NULL;
-  //elemNameSpace = new String("",0);
+  elemNameSpace = new String("",0);
 }
 xml::Element::~Element()
 {
   delete elemName;
-  //delete(elemNameSpace);
+  delete elemNameSpace;
   for(std::list<Node*>::const_iterator it = children.begin(); it != children.end(); it++)
     delete *it;
 }
@@ -19,8 +19,7 @@ const xml::String& xml::Element::name() const
 }
 const xml::String& xml::Element::nmspace() const
 {
-//  return *elemNameSpace;
-  return *elemName;
+  return *elemNameSpace;
 }
 bool xml::Element::is_Element(const Node * n)
 {

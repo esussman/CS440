@@ -25,7 +25,7 @@ namespace xml {
     private:
       std::list<Node *> children;
       String *elemName;
-     // const String *elemNameSpace;
+      const String *elemNameSpace;
   };
 }
 
