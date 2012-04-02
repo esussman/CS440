@@ -14,6 +14,18 @@ xml::Parser::Parser()
   tempString = NULL;
   root = NULL;
 }
+void xml::Parser::saveElement(Element* currentNode)
+{
+  if(currentNode->elemNameSpace == NULL)
+  {
+    currentNode->elemNameSpace = new String();
+  }
+  if(nodeStack.size() != 0){
+    nodeStack.top()->children.push_back((Element*)currentNode);
+  }
+  nodeStack.push((Element*)currentNode);
+  tempString = NULL;
+}
 void xml::Parser::saveText(Text *text)
 {
   dynamic_cast<Text*>(text)->contents = tempString;
@@ -21,15 +33,7 @@ void xml::Parser::saveText(Text *text)
     nodeStack.top()->children.push_back((Text*)text);
   tempString = NULL;
 }
-void xml::Parser::saveElement(Element *currentNode)
-{
-  dynamic_cast<Element*>(currentNode)->elemName = tempString;
-  //add the element to the children of the current top element of the stack.
-  if(nodeStack.size() != 0){
-    nodeStack.top()->children.push_back((Element*)currentNode);
-  }
-  nodeStack.push((Element*)currentNode);
-}
+
 void xml::Parser::resetTempString(const char* string)
 {
   if(tempString == NULL)
@@ -95,6 +99,8 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               //previous text must be namespace
               dynamic_cast<Element*>(currentNode)->elemNameSpace = tempString;
+              tempString = NULL;
+              state = must_be_name;
             }
             else if(isspace(data))
             {
@@ -109,11 +115,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               dynamic_cast<Element*>(currentNode)->elemName = tempString;
               //add the element to the children of the current top element of the stack.
-              if(nodeStack.size() != 0){
-                nodeStack.top()->children.push_back((Element*)currentNode);
-              }
-              nodeStack.push((Element*)currentNode);
-              tempString = NULL;
+              saveElement((Element*)currentNode);
               state = inside_body;
             }
             else
@@ -122,12 +124,37 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             }
                 break;
           case must_be_name:
+            resetTempString(doc+i);
+            if(data == '>')
+            {
+              dynamic_cast<Element*>(currentNode)->elemName = tempString;
+              saveElement((Element*)currentNode);
+              state = inside_body;
+            }
+            else if(isValidNameChar(data))
+            {
+              (*tempString).append(1);
+            }
+            else if(isspace(data) && tempString->size() == 0)
+            {
+              throw ParserError("No whitespace between namespace and name");
+            }
+            else if(isspace(data) && tempString->size() == 0)
+            {
+              //go to clear ws name
+            }
+
                 break;
           case tag_name_clear_ws:
             if(data == '>')
             {
               //save the element
-              saveElement((Element*)currentNode);
+              dynamic_cast<Element*>(currentNode)->elemName = tempString;
+              //add the element to the children of the current top element of the stack.
+              if(nodeStack.size() != 0){
+                nodeStack.top()->children.push_back((Element*)currentNode);
+              }
+              nodeStack.push((Element*)currentNode);
               tempString = NULL;
               state = inside_body;
             }
@@ -146,7 +173,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               (*tempString).append(1);
             }
-            else if(data == '>')
+            else if(data == '>' && nodeStack.top()->name() == *tempString)
             {
                 //Good name
               nodeStack.pop();
