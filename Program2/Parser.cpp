@@ -218,9 +218,13 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               throw ParserError("No whitespace between namespace and name");
             }
-            else if(isspace(data) && tempString->size() == 0)
+            else if(isspace(data) && tempString->size() > 0)
             {
               //go to get close_ws_endtag
+            }
+            else
+            {
+               throw ParserError("Names dont match!");
             }
             break;
           case inside_text:
