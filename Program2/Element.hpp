@@ -15,6 +15,7 @@ namespace xml {
       ~Element();
       const String &name() const;
       const String &nmspace() const;
+      const String &nmspaceURL() const;
       size_t n_children() const;
       const Node *child(size_t) const;
       void accept(Visitor *) const;
@@ -26,6 +27,7 @@ namespace xml {
       std::list<Node *> children;
       String *elemName;
       const String *elemNameSpace;
+      String *elemNameSpaceURL;
   };
 }
 

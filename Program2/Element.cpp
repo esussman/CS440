@@ -5,13 +5,19 @@ xml::Element::Element()
 {
   elemName = NULL;
   elemNameSpace = NULL;
+  elemNameSpaceURL = NULL;
 }
 xml::Element::~Element()
 {
   delete elemName;
   delete elemNameSpace;
+  delete elemNameSpaceURL;
   for(std::list<Node*>::const_iterator it = children.begin(); it != children.end(); it++)
     delete *it;
+}
+const xml::String& xml::Element::nmspaceURL() const
+{
+  return *elemNameSpaceURL;
 }
 const xml::String& xml::Element::name() const
 {
