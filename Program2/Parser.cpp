@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stack>
 #include <string>
+#include <map>
 
 using namespace std;
 
@@ -19,6 +20,11 @@ void xml::Parser::saveElement(Element* currentNode)
   if(currentNode->elemNameSpace == NULL)
   {
     currentNode->elemNameSpace = new String();
+    currentNode->elemNameSpaceURL = new String();
+  }
+  else
+  {
+    currentNode->elemNameSpaceURL = new String((*nmspaceStack.top())[currentNode->nmspace()]);
   }
   if(nodeStack.size() != 0){
     nodeStack.top()->children.push_back((Element*)currentNode);
@@ -52,8 +58,10 @@ bool xml::Parser::isValidTextChar(const char data)
 }
 const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
 {
+
   Node* currentNode = new Element();
   state = start;
+  String *holdNamespace;
   for(unsigned int i = 0; i < sz; i++)
   {
     const char data = doc[i];
@@ -74,7 +82,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             else if(data == '<')
             {
               root = dynamic_cast<Element*>(currentNode);
-              state = name_or_namespace;
+              state = type_of_tag;
             }
             else
             {
@@ -88,6 +96,21 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               }
               else
               {
+                //We want to create a namespace stack of maps,
+                //if it is already created then we want to
+                //push a new map to the stack
+                std::map<const String, String> *nmspaceMap;
+                if(nmspaceStack.size() > 0)
+                {
+                  //get older namespace definition, pass into constructor of new map.
+                  nmspaceMap = new std::map<const String, String>(*nmspaceStack.top());
+                }
+                else
+                {
+                  //new map
+                  nmspaceMap = new std::map<const String, String>;
+                }
+                nmspaceStack.push(nmspaceMap);
                 state = name_or_namespace;
                 continue;
               }
@@ -108,6 +131,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             else if(isspace(data))
             {
               //maybe continue?
+              dynamic_cast<Element*>(currentNode)->elemName = tempString;
               state = tag_name_clear_ws;
             }
             else if(isValidNameChar(data))
@@ -145,6 +169,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             else if(isspace(data) && tempString->size() > 0)
             {
               //go to clear ws name
+              dynamic_cast<Element*>(currentNode)->elemName = tempString;
               state = tag_name_clear_ws;
             }
                 break;
@@ -152,7 +177,6 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             if(data == '>')
             {
               //save the element
-              dynamic_cast<Element*>(currentNode)->elemName = tempString;
               saveElement((Element*)currentNode);
               state = inside_body;
             }
@@ -163,8 +187,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             else
             {
               //must be xmlns must save element
-              dynamic_cast<Element*>(currentNode)->elemName = tempString;
-              saveElement((Element*)currentNode);
+              tempString = NULL;
               state = check_xmlns;
               continue;
             }
@@ -188,9 +211,11 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             resetTempString(doc + i);
             if(data == '=' && *tempString != String("",0))
             {
-              //namespace name = tempString;
+              //we want to save the namespace def name in a temp string
+              //store it in the namespace definiton state.
+              //where to delete?
               //move to quote state
-              delete tempString;
+              holdNamespace = tempString;
               tempString = NULL;
               state = namespace_quote;
             }
@@ -214,10 +239,13 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             resetTempString(doc + i);
             if(data == '"' && tempString != NULL)
             {
-              //save definition
-              //go to end_namespace_definition
+              //save definition to map
+              (*nmspaceStack.top())[*holdNamespace] = *tempString;
               delete tempString;
               tempString = NULL;
+              delete holdNamespace;
+              holdNamespace = NULL;
+              //go to end_namespace_definition
               state = end_namespace_definition_ws;
             }
             else if(isValidAddressChar(data))
@@ -239,6 +267,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             }
             else if(data == '>')
             {
+              saveElement((Element*)currentNode);
               state = inside_body;
             }
             else
@@ -266,6 +295,8 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             }
             else if(data == '>' && nodeStack.top()->name() == *tempString && nodeStack.top()->nmspace() == String("",0))
             {
+              delete nmspaceStack.top();
+              nmspaceStack.pop();
                 //Good name
               nodeStack.pop();
               delete currentNode;
@@ -283,6 +314,8 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             resetTempString(doc+i);
             if(data == '>' && nodeStack.top()->name() == *tempString)
             {
+              delete nmspaceStack.top();
+              nmspaceStack.pop();
               //check if the names are equal
               nodeStack.pop();
               delete currentNode;
@@ -312,6 +345,8 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
           case close_tag_name_clear_ws:
             if(data == '>')
             {
+              delete nmspaceStack.top();
+              nmspaceStack.pop();
               nodeStack.pop();
               delete currentNode;
               currentNode = NULL;
@@ -329,8 +364,6 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             }
             break;
           case inside_text:
-            if(nodeStack.size() == 0 && !isspace(data))
-              throw ParserError("Text outside of tags!");
             resetTempString(doc + i);
             if( data == '<')
             {
@@ -385,7 +418,6 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
         exit(1);
   }
   delete tempString;
-
   return root;
 }
 
@@ -393,5 +425,10 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
  * FIXME:: If first n characters are the same of start and end tag
  * it will match even if end tag has remaining characters.
  *
- */
+ *
+ * FIXME:: when defining two namespaces, the second is not added.
+ * could be the comparison function? It thinks the names are equal so it doesnt add it?
+ *
+
+*/
 
