@@ -23,7 +23,7 @@ namespace xml{
       Element *root;
       String *tempString;
       std::stack<Element *> nodeStack;
-      std::stack<std::map<const String, String>> nmspaceStack;
+      std::stack<std::map<const String, String>*> nmspaceStack;
       enum {
         start = 0,
         type_of_tag,
