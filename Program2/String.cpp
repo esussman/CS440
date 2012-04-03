@@ -17,7 +17,7 @@ bool xml::String::operator==(const String& s1) const
 }
 bool xml::String::operator<(const String& s1) const
 {
-  return strncmp(contents, s1.contents, length);
+  return strncmp(contents, s1.contents, length) < 0;
 }
 bool xml::String::operator!=(const String& s1) const
 {
