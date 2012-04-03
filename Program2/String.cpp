@@ -15,6 +15,10 @@ bool xml::String::operator==(const String& s1) const
 {
   return strncmp(contents, s1.contents, length) == 0;
 }
+bool xml::String::operator<(const String& s1) const
+{
+  return strncmp(contents, s1.contents, length);
+}
 bool xml::String::operator!=(const String& s1) const
 {
   return strncmp(contents, s1.contents, length) != 0;
@@ -24,9 +28,10 @@ xml::String::operator std::string() const
 {
   return std::string(contents, length);
 }
-xml::String::String(const xml::String &)
+xml::String::String(const xml::String & s1)
 {
-
+  contents = s1.contents;
+  length = s1.length;
 }
 xml::String::String()
 {

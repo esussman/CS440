@@ -17,6 +17,7 @@ namespace xml{
       //Assigment.
       bool operator==(const String&) const;
       bool operator!=(const String&) const;
+      bool operator<(const String&) const;
 
     private:
       const char* contents;
