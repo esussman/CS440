@@ -33,7 +33,10 @@ void xml::Parser::saveText(Text *text)
     nodeStack.top()->children.push_back((Text*)text);
   tempString = NULL;
 }
-
+bool xml::Parser::isValidAddressChar(const char data)
+{
+  return data != '"' && !isspace(data);
+}
 void xml::Parser::resetTempString(const char* string)
 {
   if(tempString == NULL)
@@ -45,7 +48,7 @@ bool xml::Parser::isValidNameChar(const char data)
 }
 bool xml::Parser::isValidTextChar(const char data)
 {
-  return data != '<' && data != '>';
+  return data != '<';
 }
 const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
 {
@@ -178,6 +181,8 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               (*tempString).append(1);
             }
+            else
+              throw ParserError("invalid xml");
             break;
           case def_namespace_name:
             resetTempString(doc + i);
@@ -185,9 +190,11 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             {
               //namespace name = tempString;
               //move to quote state
+              delete tempString;
+              tempString = NULL;
               state = namespace_quote;
             }
-            if(isValidNameChar(data))
+            else if(isValidNameChar(data))
             {
               (*tempString).append(1);
             }
@@ -204,12 +211,48 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
               throw ParserError("invald namespace definition, must start with \" ");
             break;
           case namespace_definition:
+            resetTempString(doc + i);
+            if(data == '"' && tempString != NULL)
+            {
+              //save definition
+              //go to end_namespace_definition
+              delete tempString;
+              tempString = NULL;
+              state = end_namespace_definition_ws;
+            }
+            else if(isValidAddressChar(data))
+            {
+              (*tempString).append(1);
+            }
+            else
+              throw ParserError("invalid xml found");
+            break;
+          case end_namespace_definition_ws:
+            if(isspace(data))
+            {
+              //do nothing
+            }
+            else if(isValidNameChar(data))
+            {
+              state = check_xmlns;
+              continue;
+            }
+            else if(data == '>')
+            {
+              state = inside_body;
+            }
+            else
+              throw ParserError("invalid xml input");
             break;
           case close_name_or_namespace:
             resetTempString(doc + i);
             if(isspace(data) && tempString->size() == 0)
             {
               throw ParserError("No whitespace allowed before element name");
+            }
+            else if(isspace(data) && tempString->size() > 0)
+            {
+              state = close_tag_name_clear_ws;
             }
             else if(isValidNameChar(data))
             {
@@ -286,7 +329,7 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             }
             break;
           case inside_text:
-            if(nodeStack.size() == 0)
+            if(nodeStack.size() == 0 && !isspace(data))
               throw ParserError("Text outside of tags!");
             resetTempString(doc + i);
             if( data == '<')
@@ -315,6 +358,8 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
             else
             {
               //must be looking at text
+              if(nodeStack.size() == 0 && isspace(data))
+                break;
               currentNode = new Text();
               state = inside_text;
               continue;
@@ -326,12 +371,27 @@ const xml::Element* xml::Parser::parse(const char*doc, size_t sz)
       {
         cout << e.what() << endl;
         exit(1);
-      }
+      } //end try, obviously
       break;
-    }
+    } //end while
+  } //end for
+  try{
+  if(nodeStack.size() !=  0)
+    throw ParserError("unclosed tag");
   }
-
+  catch(ParserError e)
+  {
+        cout << e.what() << endl;
+        exit(1);
+  }
   delete tempString;
 
   return root;
 }
+
+/*
+ * FIXME:: If first n characters are the same of start and end tag
+ * it will match even if end tag has remaining characters.
+ *
+ */
+
